@@ -124,8 +124,12 @@ class Game {
 
         this.timer.start();
         
+        this.board.boardElement.querySelectorAll('.candy').forEach(candy => {
+            candy.style.setProperty('--candy-rotation', '0deg');
+        });
+        
         this.changeRequiredOrientation(); // Set initial required orientation
-        this.orientationRuleInterval = setInterval(this.changeRequiredOrientation.bind(this), 15000);
+        this.orientationRuleInterval = setInterval(() => this.changeRequiredOrientation(), 15000);
 
         this.inputHandler.enable();
         
@@ -156,7 +160,7 @@ class Game {
         }
     }
     
-    changeRequiredOrientation() {
+    async changeRequiredOrientation() {
         const possibleOrientations = ORIENTATIONS.filter(o => o !== this.requiredOrientation);
         this.requiredOrientation = possibleOrientations[Math.floor(Math.random() * possibleOrientations.length)];
         this.requiredOrientationIndicator.style.backgroundColor = getOrientationColor(this.requiredOrientation);
@@ -166,10 +170,35 @@ class Game {
         }
 
         const rotation = getOrientationRotation(this.requiredOrientation);
-        // Rotate the container, not the board itself
-        this.ui.gameBoardContainer.style.transform = `rotate(${rotation}deg)`;
+        const oldRotation = this.inputHandler.rotation;
         
+        // 1. Pop up candies
+        const candies = this.board.boardElement.querySelectorAll('.candy');
+        candies.forEach(candy => {
+            candy.classList.add('popped-up');
+        });
+
+        // wait for pop-up transition
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // 2. Rotate container
+        this.ui.gameBoardContainer.style.transform = `rotate(${rotation}deg)`;
         this.inputHandler.setRotation(rotation);
+        
+        // 3. Counter-rotate candies so they appear to stay upright
+        candies.forEach(candy => {
+            // The candy's new transform-rotate should be the delta between the old and new grid rotation.
+            const newCandyRotation = (oldRotation - rotation);
+            candy.style.setProperty('--candy-rotation', `${newCandyRotation}deg`);
+        });
+
+        // 4. Wait for grid rotation to finish
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        // 5. Pop candies back in
+        candies.forEach(candy => {
+            candy.classList.remove('popped-up');
+        });
 
         this.checkOrientationMatch();
     }

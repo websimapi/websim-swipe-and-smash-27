@@ -76,6 +76,18 @@ export default class Board {
             candy.style.left = `${col * candySize}px`;
         }
 
+        // Apply initial rotation if the board is already rotated
+        const gameBoardContainer = document.getElementById('game-board-container');
+        if (gameBoardContainer.style.transform) {
+            const match = gameBoardContainer.style.transform.match(/rotate\((.+)deg\)/);
+            if (match && match[1]) {
+                const rotation = -parseFloat(match[1]);
+                candy.style.setProperty('--candy-rotation', `${rotation}deg`);
+            }
+        } else {
+             candy.style.setProperty('--candy-rotation', '0deg');
+        }
+
         this.boardElement.appendChild(candy);
         return candy;
     }

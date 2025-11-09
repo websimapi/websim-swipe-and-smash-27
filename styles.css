@@ -261,13 +261,21 @@ h1 {
     background-position: center;
     cursor: pointer;
     position: absolute;
-    transition: top 0.3s ease, left 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
+    transition: top 0.3s ease, left 0.3s ease, transform 0.2s ease, opacity 0.3s ease, z-index 0.1s step-end, box-shadow 0.2s ease-out;
     will-change: top, left, transform; /* Performance hint for browsers */
     transform-origin: center center;
+    z-index: 10;
+}
+
+.candy.popped-up {
+    transform: scale(1.1) rotate(var(--candy-rotation, 0deg));
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 100;
+    transition: top 0.3s ease, left 0.3s ease, transform 0.2s ease, opacity 0.3s ease, z-index 0.1s step-start, box-shadow 0.2s ease-in;
 }
 
 .candy.selected {
-    transform: scale(1.1);
+    transform: scale(1.1) rotate(var(--candy-rotation, 0deg));
     filter: drop-shadow(0 0 5px yellow);
 }
 
