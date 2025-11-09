@@ -185,17 +185,59 @@ class Game {
         this.ui.gameBoardContainer.style.transform = `rotate(${rotation}deg)`;
         this.inputHandler.setRotation(rotation);
         
-        // 3. Counter-rotate candies so they appear to stay upright
-        candies.forEach(candy => {
-            // The candy's new transform-rotate should be the delta between the old and new grid rotation.
-            const newCandyRotation = (oldRotation - rotation);
-            candy.style.setProperty('--candy-rotation', `${newCandyRotation}deg`);
+        // 3. Update candy rotation AND position
+        const candySize = this.board.boardElement.clientWidth / this.board.size;
+        const newGrid = Array.from({ length: this.board.size }, () => Array(this.board.size).fill(null));
+
+        this.board.grid.forEach(row => {
+            row.forEach(candy => {
+                if (!candy) return;
+                
+                const r = parseInt(candy.dataset.row);
+                const c = parseInt(candy.dataset.col);
+
+                let nr, nc;
+
+                // Determine new logical grid position based on rotation
+                switch (rotation) {
+                    case 90:  nr = c; nc = this.board.size - 1 - r; break;
+                    case 180: nr = this.board.size - 1 - r; nc = this.board.size - 1 - c; break;
+                    case -90: nr = this.board.size - 1 - c; nc = r; break;
+                    default:  nr = r; nc = c; break; // 0 degrees
+                }
+
+                // Update visual position (top/left)
+                candy.style.top = `${nr * candySize}px`;
+                candy.style.left = `${nc * candySize}px`;
+                
+                // Update CSS variable for rotation to keep it upright
+                const newCandyRotation = (oldRotation - rotation);
+                candy.style.setProperty('--candy-rotation', `${newCandyRotation}deg`);
+
+                // Prepare new grid state
+                if (this.board.isValid(nr, nc)) {
+                    newGrid[nr][nc] = { candy, newR: nr, newC: nc };
+                }
+            });
         });
 
-        // 4. Wait for grid rotation to finish
+        // 4. Wait for grid rotation and candy movement to finish
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        // 5. Pop candies back in
+        // 5. Update the board's internal state and candy datasets
+        const finalGrid = Array.from({ length: this.board.size }, () => Array(this.board.size).fill(null));
+        newGrid.forEach(row => {
+            row.forEach(cell => {
+                if (cell) {
+                    cell.candy.dataset.row = cell.newR;
+                    cell.candy.dataset.col = cell.newC;
+                    finalGrid[cell.newR][cell.newC] = cell.candy;
+                }
+            });
+        });
+        this.board.grid = finalGrid;
+
+        // 6. Pop candies back in
         candies.forEach(candy => {
             candy.classList.remove('popped-up');
         });
